@@ -1,0 +1,193 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ---------------------------------------------------------
+// ENUMS: User Identity & Authorization
+// ---------------------------------------------------------
+
+enum UserType {
+  INTERNAL_EMPLOYEE   // Vertex logistics staff, drivers, hub operators, admins
+  CUSTOMER_USER       // B2B enterprise client staff, SMB shippers, retail users
+}
+
+enum UserStatus {
+  PENDING_VERIFICATION // Account created, email or phone unverified
+  ACTIVE               // Fully verified and permitted to operate
+  SUSPENDED            // Temporarily locked by security or admin action
+  DEACTIVATED          // Soft-deleted or offboarded user
+}
+
+enum MfaType {
+  NONE                 // No multi-factor enabled
+  TOTP                 // Authenticator app (RFC 6238)
+  SMS_OTP              // SMS one-time passcode fallback
+}
+
+enum OrganizationType {
+  ENTERPRISE_CLIENT    // Contractual B2B client with credit terms and multiple branches
+  SMB_SHIPPER          // Small-medium business shipper with prepaid or standard rates
+  LOGISTICS_PARTNER    // Third-party transporter, fleet operator, or 3PL delivery partner
+  VENDOR               // Hardware/supplies vendor or contractor
+}
+
+enum OrganizationStatus {
+  ONBOARDING           // KYC / GSTIN verification in progress
+  ACTIVE               // Operating and eligible for shipment booking
+  SUSPENDED            // Credit limit breached or compliance block
+  INACTIVE             // Closed or offboarded organization
+}
+
+enum RoleScope {
+  SYSTEM_INTERNAL      // Platform-wide operational roles (SuperAdmin, HubOperator, BranchManager)
+  ORGANIZATION         // Tenant-scoped roles (EnterpriseAdmin, EnterpriseMember, Dispatcher)
+}
+
+// ---------------------------------------------------------
+// MODEL: User (Central Authentication & Identity Profile)
+// ---------------------------------------------------------
+
+model User {
+  id               String      @id @default(uuid())
+  email            String      @unique
+  phone            String?     @unique
+  passwordHash     String      @map("password_hash")
+  firstName        String      @map("first_name")
+  lastName         String      @map("last_name")
+  userType         UserType    @default(CUSTOMER_USER) @map("user_type")
+  status           UserStatus  @default(PENDING_VERIFICATION)
+  emailVerifiedAt  DateTime?   @map("email_verified_at")
+  phoneVerifiedAt  DateTime?   @map("phone_verified_at")
+  mfaEnabled       Boolean     @default(false) @map("mfa_enabled")
+  mfaType          MfaType     @default(NONE) @map("mfa_type")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  // Relationships
+  userRoles        UserRole[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([userType, status])
+  @@map("users")
+}
+
+// ---------------------------------------------------------
+// MODEL: Organization (Multi-Tenant Business Account)
+// ---------------------------------------------------------
+
+model Organization {
+  id               String             @id @default(uuid())
+  name             String
+  code             String             @unique // E.g. "ORG-ACME-001"
+  type             OrganizationType   @default(ENTERPRISE_CLIENT)
+  status           OrganizationStatus @default(ONBOARDING)
+  gstin            String?            @unique // 15-character Indian GSTIN
+  pan              String?            // 10-character Indian Permanent Account Number
+  billingEmail     String?            @map("billing_email")
+  billingPhone     String?            @map("billing_phone")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  // Relationships
+  userRoles        UserRole[]
+
+  @@index([code])
+  @@index([gstin])
+  @@index([type, status])
+  @@map("organizations")
+}
+
+// ---------------------------------------------------------
+// MODEL: Role (RBAC Authority Template)
+// ---------------------------------------------------------
+
+model Role {
+  id               String            @id @default(uuid())
+  code             String            @unique // E.g. "SUPER_ADMIN", "ENTERPRISE_ADMIN"
+  name             String
+  description      String?
+  scope            RoleScope         @default(ORGANIZATION)
+  isSystemDefault  Boolean           @default(true) @map("is_system_default")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  // Relationships
+  userRoles        UserRole[]
+  rolePermissions  RolePermission[]
+
+  @@index([code])
+  @@index([scope])
+  @@map("roles")
+}
+
+// ---------------------------------------------------------
+// MODEL: Permission (Granular Action Privileges)
+// ---------------------------------------------------------
+
+model Permission {
+  id               String            @id @default(uuid())
+  code             String            @unique // E.g. "shipment:create", "org:manage_users"
+  resource         String            // E.g. "shipment", "manifest", "billing", "user"
+  action           String            // E.g. "create", "read", "update", "delete", "export"
+  description      String?
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  // Relationships
+  rolePermissions  RolePermission[]
+
+  @@index([code])
+  @@index([resource, action])
+  @@map("permissions")
+}
+
+// ---------------------------------------------------------
+// MODEL: RolePermission (Join: Role <-> Permission)
+// ---------------------------------------------------------
+
+model RolePermission {
+  id               String      @id @default(uuid())
+  roleId           String      @map("role_id")
+  permissionId     String      @map("permission_id")
+  createdAt        DateTime    @default(now()) @map("created_at")
+
+  // Relationships
+  role             Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission       Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+// ---------------------------------------------------------
+// MODEL: UserRole (Tenant-Scoped & Internal Role Assignment)
+// ---------------------------------------------------------
+
+model UserRole {
+  id               String        @id @default(uuid())
+  userId           String        @map("user_id")
+  roleId           String        @map("role_id")
+  organizationId   String?       @map("organization_id") // NULL for SYSTEM_INTERNAL roles
+  isActive         Boolean       @default(true) @map("is_active")
+  assignedAt       DateTime      @default(now()) @map("assigned_at")
+
+  // Relationships
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role             Role          @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  organization     Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId, organizationId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([organizationId])
+  @@index([userId, organizationId])
+  @@map("user_roles")
+}

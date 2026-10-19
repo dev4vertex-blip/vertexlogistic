@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "sourceMap": true,
+    "types": ["node"],
+    "rootDir": "../../",
+    "outDir": "./dist",
+    "paths": {
+      "@vertex/database": ["./src/index.ts"]
+    }
+  },
+  "include": ["src/**/*"]
+}

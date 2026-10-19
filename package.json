@@ -12,13 +12,16 @@
     "lint": "tsc --noEmit",
     "build:api": "tsc --project apps/api/tsconfig.build.json",
     "lint:api": "tsc --project apps/api/tsconfig.json --noEmit",
-    "test:api": "vitest run --config apps/api/vitest.config.ts"
+    "test:api": "vitest run --config apps/api/vitest.config.ts",
+    "lint:db": "tsc --project packages/database/tsconfig.json --noEmit",
+    "test:db": "vitest run packages/database/test/"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
     "@nestjs/common": "^10.4.15",
     "@nestjs/core": "^10.4.15",
     "@nestjs/platform-express": "^10.4.15",
+    "@prisma/client": "^6.4.1",
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.1",
     "dotenv": "^17.2.3",
@@ -40,6 +43,7 @@
     "@types/supertest": "^6.0.2",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
+    "prisma": "^6.4.1",
     "supertest": "^7.0.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",

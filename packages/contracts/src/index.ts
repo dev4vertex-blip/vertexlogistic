@@ -81,3 +81,50 @@ export interface HealthResponse {
   version: string;
 }
 
+// 8. System Readiness Response Contract
+export interface ReadyResponse {
+  status: 'ok' | 'degraded';
+  service: string;
+  version: string;
+  database: {
+    status: 'up' | 'down';
+    service: string;
+    message?: string;
+  };
+}
+
+// 9. Authentication & Authorization Contracts
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  userType: string;
+  status: string;
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  tokenType: string;
+  expiresIn: string;
+  user: AuthUser;
+}
+
+export interface JwtPayload {
+  sub: string;
+  email: string;
+  userType: string;
+  status: string;
+  iat?: number;
+  exp?: number;
+  iss?: string;
+  aud?: string;
+}
+
+
+

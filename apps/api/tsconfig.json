@@ -13,7 +13,8 @@
     "rootDir": "../../",
     "outDir": "./dist",
     "paths": {
-      "@vertex/contracts": ["../../packages/contracts/src/index.ts"]
+      "@vertex/contracts": ["../../packages/contracts/src/index.ts"],
+      "@vertex/database": ["../../packages/database/src/index.ts"]
     }
   },
   "include": ["src/**/*", "test/**/*"]

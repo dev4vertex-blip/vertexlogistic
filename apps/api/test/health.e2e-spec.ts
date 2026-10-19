@@ -87,4 +87,27 @@ describe('VERTEX Logistics API - Foundation & Health Tests', () => {
     expect(res.headers['x-xss-protection']).toBe('1; mode=block');
     expect(res.headers).not.toHaveProperty('x-powered-by');
   });
+
+  // Test 7: GET /api/health/ready returns HTTP 200 with structured database status
+  it('7. GET /api/health/ready should return structured readiness response', async () => {
+    const res = await request(app.getHttpServer()).get('/api/health/ready');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('status');
+    expect(res.body).toHaveProperty('service', 'vertex-logistics-api');
+    expect(res.body).toHaveProperty('version', '0.1.0');
+    expect(res.body).toHaveProperty('database');
+    expect(res.body.database).toHaveProperty('service', 'postgresql');
+    expect(res.body.database).toHaveProperty('status');
+  });
+
+  // Test 8: Readiness response must never expose connection strings, passwords, or internal hostnames
+  it('8. Readiness checks must never expose database credentials or connection strings', async () => {
+    const res = await request(app.getHttpServer()).get('/api/health/ready');
+    const rawResponse = JSON.stringify(res.body);
+    expect(rawResponse).not.toContain('postgresql://');
+    expect(rawResponse).not.toContain('postgres://');
+    expect(rawResponse).not.toContain('password');
+    expect(rawResponse).not.toContain('secret');
+  });
 });
+
