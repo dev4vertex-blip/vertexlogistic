@@ -1,0 +1,12 @@
+{
+  "name": "@vertex/contracts",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Shared domain types, DTO contracts, and state machine enums for VERTEX Logistics",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

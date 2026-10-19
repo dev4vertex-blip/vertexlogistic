@@ -1,0 +1,6 @@
+{
+  "name": "VERTEX Logistics & Transport",
+  "description": "Production-grade multi-tenant logistics and transportation SaaS platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
