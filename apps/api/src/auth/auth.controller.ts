@@ -15,7 +15,11 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RolesGuard } from './guards/roles.guard.js';
 import { TenantGuard } from './guards/tenant.guard.js';
 import { Roles, RequireTenant } from './decorators/auth.decorators.js';
-import type { LoginResponse } from '@vertex/contracts';
+import type {
+  LoginResponse,
+  VerifyEmailResponse,
+  ResendVerificationResponse,
+} from '@vertex/contracts';
 
 interface AuthenticatedRequest extends Request {
   user?: any;
@@ -30,6 +34,18 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() body: unknown): Promise<LoginResponse> {
     return this.authService.login(body);
+  }
+
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  async verifyEmail(@Body() body: unknown): Promise<VerifyEmailResponse> {
+    return this.authService.verifyEmail(body);
+  }
+
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  async resendVerification(@Body() body: unknown): Promise<ResendVerificationResponse> {
+    return this.authService.resendVerification(body);
   }
 
   @Get('me')

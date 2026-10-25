@@ -406,13 +406,13 @@ describe('VERTEX Logistics API - Authentication & Authorization Integration Test
 
   // 18. Expired JWT Rejection
   it('18. Expired JWT must return HTTP 401', async () => {
-    // Sign an expired token using authService's jwtService with negative expiry
-    const jwtService = app.get(AuthService)['jwtService'];
-    const expiredToken = await jwtService.signAsync(
+    // Generate immediately expired token
+    const jwt = await import('jsonwebtoken');
+    const expiredToken = jwt.default.sign(
       { sub: 'usr-customer-001', email: 'active.customer@vertex.com', status: 'ACTIVE' },
+      process.env.JWT_SECRET!,
       {
-        secret: process.env.JWT_SECRET,
-        expiresIn: '-1s',
+        expiresIn: 0,
         issuer: 'vertex-logistics',
         audience: 'vertex-api',
       },

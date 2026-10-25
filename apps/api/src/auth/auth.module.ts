@@ -6,9 +6,11 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RolesGuard } from './guards/roles.guard.js';
 import { TenantGuard } from './guards/tenant.guard.js';
 import { getAppConfig } from '../config/env.config.js';
+import { EmailModule } from '../email/email.module.js';
 
 @Module({
   imports: [
+    EmailModule,
     JwtModule.registerAsync({
       useFactory: () => {
         const config = getAppConfig();

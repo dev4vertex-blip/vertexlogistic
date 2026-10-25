@@ -1,67 +1,83 @@
-/**
- * @vertex/contracts - Core Domain Contracts & Enums
- * Authoritative single source of truth for frontend and backend shared types.
- */
+// @vertex/contracts — Type-Safe Application & Protocol Contracts
 
-// 1. Multi-Persona User Roles (Deny-by-default RBAC)
-export enum UserRole {
-  SUPER_ADMIN = 'SUPER_ADMIN',
-  BRANCH_MANAGER = 'BRANCH_MANAGER',
-  HUB_OPERATOR = 'HUB_OPERATOR',
-  FINANCE_OFFICER = 'FINANCE_OFFICER',
-  SUPPORT_AGENT = 'SUPPORT_AGENT',
-  DELIVERY_RIDER = 'DELIVERY_RIDER',
-  TRANSPORTER = 'TRANSPORTER',
-  ENTERPRISE_ADMIN = 'ENTERPRISE_ADMIN',
-  ENTERPRISE_MEMBER = 'ENTERPRISE_MEMBER',
-  RETAIL_CUSTOMER = 'RETAIL_CUSTOMER',
+// 1. Shipment Status Enums & Types
+export type ShipmentStatus =
+  | 'DRAFT'
+  | 'BOOKED'
+  | 'PICKUP_SCHEDULED'
+  | 'PICKED_UP'
+  | 'IN_TRANSIT'
+  | 'OUT_FOR_DELIVERY'
+  | 'DELIVERED'
+  | 'FAILED_DELIVERY'
+  | 'RTO_INITIATED'
+  | 'RTO_DELIVERED'
+  | 'CANCELLED'
+  | 'LOST'
+  | 'DAMAGED';
+
+// 2. Courier Provider Identifiers
+export type CourierCode =
+  | 'DELHIVERY'
+  | 'BLUEDART'
+  | 'EKART'
+  | 'DTDC'
+  | 'SMART_SHIP'
+  | 'SHYPLITE'
+  | 'XPRESSBEES';
+
+// 3. User & Organization Personas
+export type UserRole =
+  | 'SUPER_ADMIN'
+  | 'HUB_OPERATOR'
+  | 'BRANCH_MANAGER'
+  | 'FINANCE_ADMIN'
+  | 'CUSTOMER_ADMIN'
+  | 'DISPATCHER'
+  | 'VIEWER';
+
+export type TenantType =
+  | 'ENTERPRISE_CLIENT'
+  | 'SMB_SHIPPER'
+  | 'LOGISTICS_PARTNER'
+  | 'VENDOR';
+
+// 4. Core Shipment Tracking Contract
+export interface ShipmentTrackingEvent {
+  status: ShipmentStatus;
+  timestamp: string;
+  location: string;
+  description: string;
+  sourceProvider: CourierCode;
+  courierActivityCode?: string;
 }
 
-// 2. Central Shipment State Machine Lifecycle
-export enum ShipmentStatus {
-  DRAFT = 'DRAFT',
-  BOOKED = 'BOOKED',
-  PICKUP_SCHEDULED = 'PICKUP_SCHEDULED',
-  PICKED_UP = 'PICKED_UP',
-  RECEIVED_AT_ORIGIN_HUB = 'RECEIVED_AT_ORIGIN_HUB',
-  IN_TRANSIT = 'IN_TRANSIT',
-  RECEIVED_AT_DESTINATION_HUB = 'RECEIVED_AT_DESTINATION_HUB',
-  OUT_FOR_DELIVERY = 'OUT_FOR_DELIVERY',
-  DELIVERED = 'DELIVERED',
-  UNDELIVERED_ATTEMPT_1 = 'UNDELIVERED_ATTEMPT_1',
-  UNDELIVERED_ATTEMPT_2 = 'UNDELIVERED_ATTEMPT_2',
-  UNDELIVERED_ATTEMPT_3 = 'UNDELIVERED_ATTEMPT_3',
-  RTO_INITIATED = 'RTO_INITIATED',
-  RTO_DELIVERED = 'RTO_DELIVERED',
-  CANCELLED = 'CANCELLED',
-  LOST_OR_DAMAGED = 'LOST_OR_DAMAGED',
+export interface ShipmentSummary {
+  id: string;
+  waybillNumber: string;
+  carrier: CourierCode;
+  status: ShipmentStatus;
+  originHub: string;
+  destinationHub: string;
+  currentLocation: string;
+  estimatedDelivery: string;
+  recipientName: string;
+  packageWeightKg: number;
+  lastUpdated: string;
 }
 
-// 3. Shipping Service Types
-export enum ServiceType {
-  SURFACE_EXPRESS = 'SURFACE_EXPRESS',
-  AIR_PRIORITY = 'AIR_PRIORITY',
-  SAME_DAY_HYPERLOCAL = 'SAME_DAY_HYPERLOCAL',
+// 5. Courier Rate Recommendation Contract
+export interface CourierRateOption {
+  courier: CourierCode;
+  serviceType: 'EXPRESS' | 'STANDARD' | 'SURFACE' | 'AIR';
+  rate: number;
+  currency: string;
+  estimatedTransitDays: number;
+  reliabilityScore: number;
+  co2EmissionsGrams: number;
 }
 
-// 4. Payment Modes
-export enum PaymentMode {
-  PREPAID = 'PREPAID',
-  COD = 'COD',
-  POSTPAID_CREDIT = 'POSTPAID_CREDIT',
-}
-
-// 5. Shared Shipment Package Dimensions & Weights
-export interface PackageDimensions {
-  lengthCm: number;
-  widthCm: number;
-  heightCm: number;
-  deadWeightKg: number;
-  volumetricWeightKg: number;
-  chargeableWeightKg: number;
-}
-
-// 6. Base API Response Envelope
+// 6. Common API Standard Envelope
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -126,5 +142,97 @@ export interface JwtPayload {
   aud?: string;
 }
 
+// 10. Organization Onboarding & Management Contracts
+export interface CreateOrganizationRequest {
+  name: string;
+  code: string;
+  type?: 'ENTERPRISE_CLIENT' | 'SMB_SHIPPER' | 'LOGISTICS_PARTNER' | 'VENDOR';
+  gstin?: string;
+  pan?: string;
+  billingEmail?: string;
+  billingPhone?: string;
+}
 
+export interface UpdateOrganizationRequest {
+  name?: string;
+  status?: 'ONBOARDING' | 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
+  gstin?: string;
+  pan?: string;
+  billingEmail?: string;
+  billingPhone?: string;
+}
 
+export interface OrganizationResponse {
+  id: string;
+  name: string;
+  code: string;
+  type: string;
+  status: string;
+  gstin?: string | null;
+  pan?: string | null;
+  billingEmail?: string | null;
+  billingPhone?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AddOrgUserRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  roleCode: string;
+}
+
+export interface UpdateOrgUserStatusRequest {
+  status: 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED';
+}
+
+export interface OrgUserResponse {
+  id: string;
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  userType: string;
+  status: string;
+  role: {
+    id: string;
+    code: string;
+    name: string;
+  };
+  isActive: boolean;
+  assignedAt: string;
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface VerifyEmailRequest {
+  token: string;
+  password?: string;
+}
+
+export interface VerifyEmailResponse {
+  success: boolean;
+  message: string;
+  user?: {
+    id: string;
+    email: string;
+    status: string;
+  };
+}
+
+export interface ResendVerificationRequest {
+  email: string;
+}
+
+export interface ResendVerificationResponse {
+  success: boolean;
+  message: string;
+}

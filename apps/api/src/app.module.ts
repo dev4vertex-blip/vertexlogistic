@@ -2,10 +2,12 @@ import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { HealthModule } from './health/health.module.js';
 import { PrismaModule } from '@vertex/database';
 import { AuthModule } from './auth/auth.module.js';
+import { OrganizationsModule } from './organizations/organizations.module.js';
+import { EmailModule } from './email/email.module.js';
 import { securityHeadersMiddleware } from './common/middleware/security.middleware.js';
 
 @Module({
-  imports: [HealthModule, PrismaModule, AuthModule],
+  imports: [HealthModule, PrismaModule, AuthModule, OrganizationsModule, EmailModule],
   controllers: [],
   providers: [],
 })

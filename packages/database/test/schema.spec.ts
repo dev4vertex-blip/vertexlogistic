@@ -264,4 +264,19 @@ describe('@vertex/database - Core Domain Schema & Authorization Boundary Tests',
       'ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE RESTRICT',
     );
   });
+
+  // 14. Verification Token Model & Secure Storage
+  it('14. should define VerificationToken model with tokenHash and migration DDL', () => {
+    expect(schemaContent).toContain('model VerificationToken');
+    expect(schemaContent).toContain('tokenHash');
+    expect(schemaContent).toContain('VerificationTokenType');
+
+    const step28MigrationPath = path.resolve(__dirname, '../prisma/migrations/20261024_add_verification_tokens/migration.sql');
+    const step28Migration = fs.readFileSync(step28MigrationPath, 'utf-8');
+    expect(step28Migration).toContain('CREATE TABLE "verification_tokens"');
+    expect(step28Migration).toContain('"token_hash" TEXT NOT NULL');
+    expect(step28Migration).toContain('CREATE UNIQUE INDEX "verification_tokens_token_hash_key"');
+    expect(step28Migration).toContain('CREATE UNIQUE INDEX "unique_active_org_invitation"');
+    expect(step28Migration).toContain('CREATE UNIQUE INDEX "unique_active_email_verification"');
+  });
 });
